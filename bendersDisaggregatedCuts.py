@@ -63,7 +63,7 @@ def solveModelGurobi():
     return m2.objVal, xVal, yVal
 
 
-def subProblem(x):
+def subProblem(x):  # sub-problem should be independent, and solve them separately for each y_i, however, here, we are solving them together
     m1 = Model()
     y = {(i, j): m1.addVar(lb=0, vtype=GRB.CONTINUOUS) for i in range(C) for j in range(F)}
     constrMu = {}
@@ -150,7 +150,7 @@ def callBackFunction(model, where):
         xHat = [model.cbGetSolution(model.getVarByName(str(k))) for k in range(F)]
         UB = model.cbGet(GRB.Callback.MIPSOL_OBJ)
         LB, mu, nu, y, status = subProblem(xHat)
-        # print(LB, UB, xHat)
+
         if status == 3:
             for i in range(C):
                 tot = mu[i]
@@ -186,9 +186,9 @@ def bendersDisaggCuts(eps, x_initial, maxit, verbose=0):
     while eps < tol and it < maxit:
         ob, mu, nu, y, status = subProblem(x)
         LB = max(LB, ob)
-        if status == 2:
+        if status == 2:  # sub-problem is feasible and get the optimality solution
             obj, x, eta, m = solveMasterAggCuts(m, mu, nu, [], [])
-        else:
+        else:  # sub-problem is infeasible
             obj, x, eta, m = solveMasterAggCuts(m, [], [], mu, nu)
             # UB = min(UB, obj)
         UB = obj
